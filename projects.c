@@ -111,11 +111,133 @@ void instruction_partition(unsigned instruction, unsigned *op, unsigned *r1,unsi
 }
 
 
-
+// Done by Carlos Calimano
 /* instruction decode */
 /* 15 Points */
 int instruction_decode(unsigned op,struct_controls *controls)
 {
+
+    if(op== 0x00){
+
+	controls->RegDst=1;
+	controls->Branch=0;
+	controls->MemRead =0;
+	controls->MemtoReg=0;
+	controls->MemWrite=0;
+	controls->ALUSrc=0;
+	controls->RegWrite=1;
+	controls->Jump=0;
+	controls->ALUOp=7;
+}
+else if(op == 0x08){
+//addi
+	controls->RegDst=0;
+	controls->Branch=0;
+	controls->MemRead =0;
+	controls->MemtoReg=0;
+	controls->MemWrite=0;
+	controls->ALUSrc=1;
+	controls->RegWrite=1;
+	controls->Jump=0;
+	controls->ALUOp=0;
+
+}
+else if(op == 0x23){ // lw
+
+
+	controls->RegDst=0;
+	controls->Branch=0;
+	controls->MemRead =1;
+	controls->MemtoReg=1;
+	controls->MemWrite=0;
+	controls->ALUSrc=1;
+	controls->RegWrite=1;
+	controls->Jump=0;
+	controls->ALUOp=0;
+}
+else if(op ==0x2B){ //sw
+
+	controls->RegDst=2;
+	controls->Branch=0;
+	controls->MemRead =0;
+	controls->MemtoReg=2;
+	controls->MemWrite=1;
+	controls->ALUSrc=1;
+	controls->RegWrite=0;
+	controls->Jump=0;
+	controls->ALUOp=0;
+}
+else if(op==0x0F){
+//lui
+
+	controls->RegDst=0;
+	controls->Branch=0;
+	controls->MemRead =0;
+	controls->MemtoReg=0;
+	controls->MemWrite=0;
+	controls->ALUSrc=1;
+	controls->RegWrite=1;
+	controls->Jump=0;
+	controls->ALUOp=6;
+}
+
+else if(op == 0x04){
+//beq
+	controls->RegDst=2;
+	controls->Branch=1;
+	controls->MemRead =0;
+	controls->MemtoReg=2;
+	controls->MemWrite=0;
+	controls->ALUSrc=0;
+	controls->RegWrite=0;
+	controls->Jump=0;
+	controls->ALUOp=1;
+}
+
+//slti
+else if(op == 0x0A){
+	controls->RegDst=0;
+	controls->Branch=0;
+	controls->MemRead =0;
+	controls->MemtoReg=0;
+	controls->MemWrite=0;
+	controls->ALUSrc=1;
+	controls->RegWrite=1;
+	controls->Jump=0;
+	controls->ALUOp=2;
+
+}
+else if(op == 0x0B){
+//sltiu
+
+	controls->RegDst=0;
+	controls->Branch=0;
+	controls->MemRead =0;
+	controls->MemtoReg=0;
+	controls->MemWrite=0;
+	controls->ALUSrc=1;
+	controls->RegWrite=1;
+	controls->Jump=0;
+	controls->ALUOp=3;
+}
+
+else if(op == 0x02){ //jump
+
+	controls->RegDst=2;
+	controls->Branch=0;
+	controls->MemRead =0;
+	controls->MemtoReg=2;
+	controls->MemWrite=0;
+	controls->ALUSrc=2;
+	controls->RegWrite=0;
+	controls->Jump=1;
+	controls->ALUOp=0;
+
+}
+else{
+	return 1;
+}
+return 0;
 
 }
 
@@ -154,11 +276,31 @@ int ALU_operations(unsigned data1,unsigned data2,unsigned extended_value,unsigne
     
 }
 
+// Done by Carlos Calimano
 /* Read / Write Memory */
 /* 10 Points */
 int rw_memory(unsigned ALUresult,unsigned data2,char MemWrite,char MemRead,unsigned *memdata,unsigned *Mem)
 {
+	if (MemRead == 1 || MemWrite == 1){
+if (ALUresult % 4 != 0){
+	return 1;
+}
 
+	if(ALUresult >= 65536){
+
+return 1;
+	}
+}
+if (MemRead == 1){
+*memdata = Mem[ALUresult >> 2];
+
+	}
+	if(MemWrite == 1){
+
+		Mem[ALUresult >> 2] = data2;
+	}
+
+	return 0;
 }
 
 
@@ -169,10 +311,22 @@ void write_register(unsigned r2,unsigned r3,unsigned memdata,unsigned ALUresult,
 
 }
 
+// Done by Carlos Calimano
 /* PC update */
 /* 10 Points */
 void PC_update(unsigned jsec,unsigned extended_value,char Branch,char Jump,char Zero,unsigned *PC)
 {
+*PC = *PC + 4;
 
+if (Branch == 1 && Zero == 1){
+
+	*PC = *PC + (extended_value << 2);
+}
+
+
+if (Jump == 1 ){
+
+	*PC = (*PC & 0xF0000000) | (jsec << 2);
+}
 }
 
