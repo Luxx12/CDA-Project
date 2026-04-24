@@ -73,11 +73,22 @@ void ALU(unsigned A,unsigned B,char ALUControl,unsigned *ALUresult,char *Zero)
     *Zero = (*ALUresult == 0) ? 1 : 0;
 }
 
+// done by Mike Rodriguez
 /* instruction fetch */
 /* 10 Points */
 int instruction_fetch(unsigned PC,unsigned *Mem,unsigned *instruction)
 {
+    // check if PC is word-aligned
+    if (PC % 4 != 0)
+        return 1;
 
+    // check if PC is within memory bounds (less than 65536)
+    if (PC >= 65536)
+        return 1;
+
+    // fetch the instruction from memory
+    *instruction = Mem[PC >> 2];
+    return 0;
 }
 
 // done by Gabriel Barreto Otero
@@ -269,11 +280,85 @@ void sign_extend(unsigned offset,unsigned *extended_value)
     }
 }
 
+// done by Mike Rodriguez
 /* ALU operations */
 /* 10 Points */
 int ALU_operations(unsigned data1,unsigned data2,unsigned extended_value,unsigned funct,char ALUOp,char ALUSrc,unsigned *ALUresult,char *Zero)
 {
-    
+    unsigned B;
+
+    // determine second ALU operand
+    if (ALUSrc == 0)
+        B = data2;
+    else if (ALUSrc == 1)
+        B = extended_value;
+    else
+        // ALUSrc should only be 0 or 1, if its something else just default to using data2
+        B = data2;
+
+    // determine ALU operation to perform
+    switch (ALUOp)
+    {
+        case 0:
+            // for lw, sw, addi: perform addition
+            *ALUresult = data1 + B;
+            break;
+
+        case 1:
+            // for beq: perform subtraction
+            *ALUresult = data1 - B;
+            break;
+
+        case 2:
+            // for slt and slti: set on less than (treat as signed)
+            *ALUresult = ((int)data1 < (int)B) ? 1 : 0;
+            break;
+
+        case 3:
+            // for sltu and sltiu: set on less than (treat as unsigned)
+            *ALUresult = (data1 < B) ? 1 : 0;
+            break;
+
+        case 4:
+            // for and: bitwise AND
+            *ALUresult = data1 & B;
+            break;
+
+        case 5:
+            // for or: bitwise OR
+            *ALUresult = data1 | B;
+            break;
+
+        case 6:
+            // for lui: shift B left by 16 bits
+            *ALUresult = B << 16;
+            break;
+
+        case 7:
+            // for R-type instructions with funct field determining the exact operation, we need to look at funct
+            switch (funct)
+            {
+                case 32: // add
+                    *ALUresult = data1 + B;
+                    break;
+
+                case 34: // sub
+                    *ALUresult = data1 - B;
+                    break;
+
+                case 42: // slt
+                    *ALUresult = ((int)data1 < (int)B) ? 1 : 0;
+                    break;
+
+                case 43: // sltu
+                    *ALUresult = (data1 < B) ? 1 : 0;
+                    break;
+
+                case 36: // and
+                    *ALUresult = data1 & B;
+                    break;
+            }        default:
+    }
 }
 
 // Done by Carlos Calimano
@@ -303,12 +388,31 @@ if (MemRead == 1){
 	return 0;
 }
 
-
+// done by Mike Rodriguez
 /* Write Register */
 /* 10 Points */
 void write_register(unsigned r2,unsigned r3,unsigned memdata,unsigned ALUresult,char RegWrite,char RegDst,char MemtoReg,unsigned *Reg)
 {
+    if (RegWrite == 1)
+    {
+        unsigned write_data;
+        unsigned write_reg;
 
+        // determine what data to write
+        if (MemtoReg == 0)
+            write_data = ALUresult;
+        else if (MemtoReg == 1)
+            write_data = memdata;
+
+        // determine which register to write to
+        if (RegDst == 0)
+            write_reg = r2;
+        else if (RegDst == 1)
+            write_reg = r3;
+
+        // perform the write
+        Reg[write_reg] = write_data;
+    }
 }
 
 // Done by Carlos Calimano
